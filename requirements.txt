@@ -1,0 +1,7 @@
+fastapi
+uvicorn[standard]
+langgraph
+langchain-google-genai
+langchain-core
+sse-starlette
+httpx
