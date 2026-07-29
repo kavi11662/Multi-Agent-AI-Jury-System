@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AI Jury Confidence</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #08080e;
+      --card: rgba(255, 255, 255, .03);
+      --border: rgba(255, 255, 255, .06);
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --accent: #8b5cf6
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh
+    }
+
+    .wrap {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 48px 20px
+    }
+
+    /* ── Header ── */
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 4px
+    }
+
+    .sub {
+      color: var(--muted);
+      font-size: .85rem;
+      margin-bottom: 32px
+    }
+
+    /* ── Input ── */
+    .input-box {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 32px
+    }
+
+    textarea {
+      flex: 1;
+      padding: 14px 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font: 400 .95rem 'Inter';
+      resize: none;
+      min-height: 56px;
+      transition: border .2s
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent)
+    }
+
+    button {
+      padding: 0 28px;
+      background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      font: 600 .85rem 'Inter';
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity .2s
+    }
+
+    button:hover {
+      opacity: .85
+    }
+
+    button:disabled {
+      opacity: .4;
+      cursor: not-allowed
+    }
+
+    /* ── Steps ── */
+    .step {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px 24px;
+      margin-bottom: 14px;
+      backdrop-filter: blur(12px);
+      animation: fadeIn .45s ease
+    }
+
+    .step-hdr {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+      font: 600 .75rem 'Inter';
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted)
+    }
+
+    .num {
+      background: var(--accent);
+      color: #fff;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .65rem;
+      font-weight: 700;
+      flex-shrink: 0
+    }
+
+    .badge {
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: .7rem;
+      font-weight: 600
+    }
+
+    .badge-d {
+      background: rgba(16, 185, 129, .12);
+      color: #10b981
+    }
+
+    .badge-m {
+      background: rgba(139, 92, 246, .12);
+      color: #8b5cf6
+    }
+
+    .reasoning {
+      color: var(--muted);
+      font-style: italic;
+      font-size: .88rem;
+      line-height: 1.5;
+      margin-top: 6px
+    }
+
+    /* ── Agents Grid ── */
+    .ag-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 10px;
+      margin-top: 4px
+    }
+
+    .ag {
+      background: rgba(255, 255, 255, .02);
+      border: 1px solid;
+      border-radius: 12px;
+      padding: 14px;
+      transition: opacity .3s
+    }
+
+    .ag.ld {
+      opacity: .55;
+      animation: pulse 1.4s infinite
+    }
+
+    .ag-nm {
+      font-weight: 600;
+      font-size: .85rem;
+      display: flex;
+      align-items: center;
+      gap: 7px
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0
+    }
+
+    .ag-st {
+      font-size: .72rem;
+      color: var(--muted);
+      margin: 6px 0
+    }
+
+    .ag-out {
+      font-size: .82rem;
+      line-height: 1.55;
+      max-height: 160px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word
+    }
+
+    .ag-out::-webkit-scrollbar {
+      width: 4px
+    }
+
+    .ag-out::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px
+    }
+
+    /* ── Jury round-1 feedback (interim, no scores) ── */
+    .fb {
+      background: rgba(255, 255, 255, .02);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 8px
+    }
+
+    .fb-nm {
+      font-weight: 600;
+      font-size: .82rem;
+      margin-bottom: 4px
+    }
+
+    .fb-txt {
+      font-size: .8rem;
+      color: var(--muted);
+      line-height: 1.5
+    }
+
+    .cross-notes {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      font-size: .82rem;
+      color: var(--muted);
+      font-style: italic;
+      line-height: 1.5
+    }
+
+    /* ── Jury (final) ── */
+    .ev {
+      background: rgba(255, 255, 255, .02);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 10px;
+      border: 1px solid transparent
+    }
+
+    .ev.best {
+      border-color: rgba(250, 204, 21, .25);
+      box-shadow: 0 0 24px rgba(250, 204, 21, .04)
+    }
+
+    .ev-hdr {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      margin-bottom: 10px
+    }
+
+    .ev-score {
+      font-size: 1.15rem
+    }
+
+    .best-tag {
+      background: rgba(250, 204, 21, .12);
+      color: #facc15;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: .68rem;
+      font-weight: 700
+    }
+
+    .sc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 6px;
+      margin: 10px 0
+    }
+
+    .sc-item label {
+      font-size: .68rem;
+      text-transform: capitalize;
+      color: var(--muted)
+    }
+
+    .sc-bar {
+      height: 18px;
+      background: rgba(255, 255, 255, .04);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 3px
+    }
+
+    .sc-fill {
+      height: 100%;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 5px;
+      font-size: .62rem;
+      font-weight: 700;
+      width: 0;
+      transition: width .9s ease
+    }
+
+    .ev-det {
+      font-size: .78rem;
+      color: var(--muted);
+      margin-top: 8px;
+      line-height: 1.5
+    }
+
+    /* ── Verdict ── */
+    .verdict {
+      border-color: rgba(250, 204, 21, .15);
+      background: rgba(250, 204, 21, .02)
+    }
+
+    .v-winner {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #facc15;
+      margin-bottom: 4px
+    }
+
+    .v-reason {
+      color: var(--muted);
+      font-size: .88rem;
+      line-height: 1.5;
+      margin: 8px 0
+    }
+
+    .v-out {
+      background: rgba(255, 255, 255, .02);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 12px;
+      font-size: .88rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 400px;
+      overflow-y: auto
+    }
+
+    /* ── Direct ── */
+    .dir-out {
+      font-size: .92rem;
+      line-height: 1.65;
+      white-space: pre-wrap;
+      word-break: break-word
+    }
+
+    /* ── Error ── */
+    .step.err {
+      border-color: rgba(239, 68, 68, .25);
+      color: #ef4444
+    }
+
+    /* ── Spinner ── */
+    .spin {
+      color: var(--muted);
+      font-size: .88rem;
+      display: flex;
+      align-items: center;
+      gap: 8px
+    }
+
+    .spin::before {
+      content: '';
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .7s linear infinite
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: .55
+      }
+
+      50% {
+        opacity: .9
+      }
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg)
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <h1>⚖️ AI Jury Confidence</h1>
+    <p class="sub">Multi-agent debate with a swap-and-revise round, fully transparent reasoning</p>
+    <div class="input-box">
+      <textarea id="q" placeholder="Enter your query..." rows="2"></textarea>
+      <button id="btn" onclick="run()">▶ Analyze</button>
+    </div>
+    <div id="out"></div>
+  </div>
+  <script>
+    const C = ['#8b5cf6', '#06b6d4', '#f59e0b', '#10b981', '#ef4444'];
+    const out = document.getElementById('out');
+    const btn = document.getElementById('btn');
+    let round1Agents = {};
+    let round2Agents = {};
+
+    function h(tag, cls, html) { const d = document.createElement(tag); if (cls) d.className = cls; if (html) d.innerHTML = html; return d }
+    function esc(s) { return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>') }
+
+    async function run() {
+      const q = document.getElementById('q').value.trim();
+      if (!q) return;
+      out.innerHTML = ''; round1Agents = {}; round2Agents = {};
+      btn.disabled = true; btn.textContent = '⏳ Running...';
+
+      try {
+        const res = await fetch('/api/query', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: q }) });
+        const reader = res.body.getReader();
+        const dec = new TextDecoder();
+        let buf = '', evt = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += dec.decode(value, { stream: true });
+          const lines = buf.split('\n');
+          buf = lines.pop() || '';
+          for (const l of lines) {
+            if (l.startsWith('event:')) evt = l.slice(6).trim();
+            else if (l.startsWith('data:')) {
+              try { handle(evt, JSON.parse(l.slice(5))) } catch (e) { }
+            }
+          }
+        }
+      } catch (e) {
+        out.appendChild(h('div', 'step err', `<p>❌ ${e.message}</p>`));
+      }
+      btn.disabled = false; btn.textContent = '▶ Analyze';
+    }
+
+    function agentGridStep(num, label, gridId) {
+      const s = h('div', 'step', `<div class="step-hdr"><span class="num">${num}</span><span>${label}</span></div>`);
+      const g = h('div', 'ag-grid'); g.id = gridId;
+      s.appendChild(g); out.appendChild(s);
+      return s;
+    }
+
+    function agentCardStart(gridId, id, name) {
+      const c = C[id % C.length];
+      const card = h('div', 'ag ld'); card.id = `${gridId}-${id}`; card.style.borderColor = c;
+      card.innerHTML = `<div class="ag-nm"><span class="dot" style="background:${c}"></span><span style="color:${c}">${name}</span></div>
+    <div class="ag-st">⏳ Thinking...</div><div class="ag-out"></div>`;
+      document.getElementById(gridId)?.appendChild(card);
+    }
+
+    function agentCardDone(gridId, id, output) {
+      const card = document.getElementById(`${gridId}-${id}`);
+      if (card) {
+        card.classList.remove('ld');
+        card.querySelector('.ag-st').textContent = '✅ Done';
+        card.querySelector('.ag-out').textContent = output;
+      }
+    }
+
+    function handle(type, d) {
+      if (type === 'classification') {
+        const multi = d.type === 'multi';
+        out.appendChild(h('div', 'step', `
+      <div class="step-hdr"><span class="num">01</span><span>Classification</span>
+        <span class="badge ${multi ? 'badge-m' : 'badge-d'}">${d.type}</span>
+        ${multi ? `<span class="badge badge-m">${d.count} agents</span>` : ''}
+      </div>
+      <div class="reasoning">"${d.reasoning}"</div>`));
+        if (multi) agentGridStep('02', 'Round 1 · Independent Responses', 'r1-grid');
+      }
+
+      else if (type === 'round1_agent_start') agentCardStart('r1-grid', d.id, d.name);
+      else if (type === 'round1_agent_done') {
+        round1Agents[d.id] = d;
+        agentCardDone('r1-grid', d.id, d.output);
+      }
+
+      else if (type === 'jury_round1_start') {
+        out.appendChild(h('div', 'step', `<div class="step-hdr"><span class="num">03</span><span>Jury Review · Round 1</span></div>
+      <div class="spin" id="jr1-spin">Reviewing before the swap...</div><div id="jr1-body"></div>`));
+      }
+      else if (type === 'jury_round1_done') {
+        const spin = document.getElementById('jr1-spin'); if (spin) spin.remove();
+        const body = document.getElementById('jr1-body');
+        if (body) {
+          const feedback = d.feedback || [];
+          body.innerHTML = feedback.map(f => {
+            const agent = round1Agents[f.id];
+            const c = C[f.id % C.length];
+            return `<div class="fb">
+          <div class="fb-nm" style="color:${c}">${agent ? agent.name : 'Agent ' + f.id}</div>
+          <div class="fb-txt">${esc(f.issues || '')} ${esc(f.what_to_consider || '')}</div>
+        </div>`;
+          }).join('') + (d.cross_agent_notes ? `<div class="cross-notes">${esc(d.cross_agent_notes)}</div>` : '');
+        }
+        agentGridStep('04', 'Round 2 · Swapped &amp; Revised', 'r2-grid');
+      }
+
+      else if (type === 'round2_agent_start') agentCardStart('r2-grid', d.id, d.name);
+      else if (type === 'round2_agent_done') {
+        round2Agents[d.id] = d;
+        agentCardDone('r2-grid', d.id, d.output);
+      }
+
+      else if (type === 'jury_start') {
+        out.appendChild(h('div', 'step', `<div class="step-hdr"><span class="num">05</span><span>Jury Final Verdict</span></div>
+      <div class="spin" id="jury-spin">Jury is deliberating on the revised answers...</div><div id="jury-body"></div>`));
+      }
+      else if (type === 'jury_done') {
+        const spin = document.getElementById('jury-spin'); if (spin) spin.remove();
+        const jb = document.getElementById('jury-body');
+        if (jb && d.evaluations) {
+          jb.innerHTML = d.evaluations.map(e => {
+            const c = C[e.id % C.length];
+            const isBest = e.id === d.best_id;
+            return `<div class="ev${isBest ? ' best' : ''}">
+          <div class="ev-hdr"><span style="color:${c}">${e.name}</span>
+            <span class="ev-score">${e.overall}<span style="color:var(--muted);font-size:.7rem">/100</span></span>
+            ${isBest ? '<span class="best-tag">⭐ BEST</span>' : ''}</div>
+          <div class="sc-grid">${Object.entries(e.scores || {}).map(([k, v]) => `
+            <div class="sc-item"><label>${k}</label>
+              <div class="sc-bar"><div class="sc-fill" style="width:${v}%;background:${c}">${v}</div></div>
+            </div>`).join('')}</div>
+          <div class="ev-det"><strong>✓</strong> ${e.strengths || '-'}<br><strong>✗</strong> ${e.weaknesses || '-'}</div>
+        </div>`}).join('');
+          jb.offsetHeight;
+          jb.querySelectorAll('.sc-fill').forEach(f => { const w = f.style.width; f.style.width = '0'; requestAnimationFrame(() => f.style.width = w) });
+        }
+        const best = d.evaluations?.find(e => e.id === d.best_id);
+        const bestOut = round2Agents[d.best_id]?.output || '';
+        out.appendChild(h('div', 'step verdict', `
+      <div class="step-hdr"><span class="num">06</span><span>🏆 Verdict</span></div>
+      <div class="v-winner">${best?.name || 'Best Agent'} · ${best?.overall || 0}/100</div>
+      <div class="v-reason">${esc(d.reasoning || '')}</div>
+      <div class="v-out">${esc(bestOut)}</div>`));
+        out.lastChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }
+
+      else if (type === 'direct') {
+        out.appendChild(h('div', 'step', `<div class="step-hdr"><span class="num">02</span><span>Response</span></div>
+      <div class="dir-out">${esc(d.output)}</div>`));
+      }
+      else if (type === 'error') {
+        out.appendChild(h('div', 'step err', `<p>❌ ${esc(d.message || 'Unknown error')}</p>`));
+      }
+    }
+
+    document.getElementById('q').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); run() } });
+  </script>
+</body>
+
+</html>
